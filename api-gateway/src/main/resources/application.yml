@@ -6,6 +6,13 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      # Enable service discovery integration
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      # Route Configuration - Define how requests are routed
       routes:
         # Auth Service Routes
         - id: auth-service-route
@@ -39,6 +46,32 @@ spring:
           filters:
             - StripPrefix=2
 
+      # Enhanced CORS Configuration for Angular
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"     # Angular development server
+              - "http://127.0.0.1:4200"     # Alternative localhost format
+              - "http://localhost:3000"     # React (backup for testing)
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+              - HEAD
+            allowedHeaders:
+              - "*"
+            exposedHeaders:
+              - "Authorization"
+              - "Content-Type"
+              - "X-Total-Count"
+              - "X-Request-ID"
+            allowCredentials: true
+            maxAge: 3600
+
 # Eureka Configuration (for registration only)
 eureka:
   client:
@@ -54,6 +87,7 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.web: DEBUG
+    com.service.gateway: DEBUG
 
 # Management Endpoints
 management:
