@@ -53,6 +53,66 @@ public class AuthController {
         }
     }
 
+    // Token Refresh Endpoint for Angular
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            // Validate authorization header format
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                AuthResponse errorResponse = new AuthResponse("Invalid authorization header format");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            // Extract token from header
+            String oldToken = authHeader.substring(7); // Remove "Bearer " prefix
+            // Extract user information from existing token
+            String email = authService.getJwtService().extractEmail(oldToken);
+            Long userId = authService.getJwtService().extractUserId(oldToken);
+            String name = authService.getJwtService().extractName(oldToken);
+            // Validate existing token
+            if (!authService.getJwtService().isTokenValid(oldToken, email)) {
+                AuthResponse errorResponse = new AuthResponse("Token expired or invalid");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            // Generate new token with fresh expiration
+            String newToken = authService.getJwtService().generateToken(email, userId, name);
+            AuthResponse response = new AuthResponse(newToken, email, name, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            AuthResponse errorResponse = new AuthResponse("Failed to refresh token: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+    }
+
+    // Get Current User Info Endpoint for Angular
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        try {
+            // Validate authorization header format
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                AuthResponse errorResponse = new AuthResponse("Invalid authorization header format");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            // Extract token from header
+            String token = authHeader.substring(7); // Remove "Bearer " prefix
+            // Extract user information from token
+            String email = authService.getJwtService().extractEmail(token);
+            Long userId = authService.getJwtService().extractUserId(token);
+            String name = authService.getJwtService().extractName(token);
+            // Validate token
+            if (!authService.getJwtService().isTokenValid(token, email)) {
+                AuthResponse errorResponse = new AuthResponse("Token expired or invalid");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            // Verify user still exists in database
+            User user = authService.getUserByEmail(email);
+            AuthResponse response = new AuthResponse(token, email, name, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            AuthResponse errorResponse = new AuthResponse("Failed to get current user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+    }
+
     @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
