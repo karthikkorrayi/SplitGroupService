@@ -52,7 +52,7 @@ transaction:
     max-participants: 20   # Maximum number of people in a transaction
     allow-future-dates: false  # Whether to allow future-dated transactions
 
-# Logging Configuration
+# Logging Configurations
 logging:
   level:
     com.service.transaction: DEBUG
